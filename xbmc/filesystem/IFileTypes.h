@@ -79,6 +79,9 @@ enum CURLOPTIONTYPE
  * active-remote: Set the "active-remote" header
  * auth: Set the authentication method. Possible values: any, anysafe, digest, ntlm
  * connection-timeout: Set the connection timeout in seconds
+ * data-timeout: Set maximum time the transfer is allowed to complete in seconds
+ * lowspeed-time: It contains the time in number seconds that the transfer speed should be below the CURLOPT_LOW_SPEED_LIMIT (default 1 Byte/sec) for the library to consider it too slow and abort
+ * speed-limit: Set low speed limit in bytes per second
  * cookie: Set the "cookie" header
  * customrequest: Set a custom HTTP request like DELETE
  * noshout: Set to true if kodi detects a stream as shoutcast by mistake.

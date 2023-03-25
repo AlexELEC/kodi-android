@@ -421,8 +421,10 @@ CCurlFile::CCurlFile()
   m_multisession  = true;
   m_seekable = true;
   m_connecttimeout = 0;
+  m_datatimeout = 0;
+  m_speedlimit = 1;
   m_redirectlimit = 5;
-  m_lowspeedtime = 0;
+  m_lowspeedtime = -1;
   m_ftppasvip = false;
   m_bufferSize = 32768;
   m_postdataset = false;
@@ -640,10 +642,13 @@ void CCurlFile::SetCommonOptions(CReadState* state, bool failOnError /* = true *
   // set our timeouts, we abort connection after m_timeout, and reads after no data for m_timeout seconds
   g_curlInterface.easy_setopt(h, CURLOPT_CONNECTTIMEOUT, m_connecttimeout);
 
-  // We abort in case we transfer less than 1byte/second
-  g_curlInterface.easy_setopt(h, CURLOPT_LOW_SPEED_LIMIT, 1);
+  // set maximum time the transfer is allowed to complete in seconds
+  g_curlInterface.easy_setopt(h, CURLOPT_TIMEOUT, m_datatimeout);
 
-  if (m_lowspeedtime == 0)
+  // We abort in case we transfer less than 1byte/second
+  g_curlInterface.easy_setopt(h, CURLOPT_LOW_SPEED_LIMIT, m_speedlimit);
+
+  if (m_lowspeedtime < 0)
     m_lowspeedtime = CServiceBroker::GetSettingsComponent()->GetAdvancedSettings()->m_curllowspeedtime;
 
   // Set the lowspeed time very low as it seems Curl takes much longer to detect a lowspeed condition
@@ -886,6 +891,12 @@ void CCurlFile::ParseAndCorrectUrl(CURL &url2)
           m_cipherlist = value;
         else if (name == "connection-timeout")
           m_connecttimeout = strtol(value.c_str(), NULL, 10);
+        else if (name == "data-timeout")
+          m_datatimeout = strtol(value.c_str(), NULL, 10);
+        else if (name == "lowspeed-time")
+          m_lowspeedtime = strtol(value.c_str(), NULL, 10);
+        else if (name == "speed-limit")
+          m_speedlimit = strtol(value.c_str(), NULL, 10);
         else if (name == "failonerror")
           m_failOnError = value == "true";
         else if (name == "redirect-limit")
