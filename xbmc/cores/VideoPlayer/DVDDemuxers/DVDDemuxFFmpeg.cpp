@@ -208,6 +208,7 @@ CDVDDemuxFFmpeg::CDVDDemuxFFmpeg() : CDVDDemux()
   m_bSup = false;
   m_speed = DVD_PLAYSPEED_NORMAL;
   m_program = UINT_MAX;
+  m_oldStreams = 0;
   m_pkt.result = -1;
   memset(&m_pkt.pkt, 0, sizeof(AVPacket));
   m_streaminfo = true; /* set to true if we want to look for streams before playback */
@@ -1099,17 +1100,37 @@ DemuxPacket* CDVDDemuxFFmpeg::Read()
         if (IsProgramChange())
         {
           CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read() stream change");
-          av_dump_format(m_pFormatContext, 0, CURL::GetRedacted(m_pInput->GetFileName()).c_str(),
-                         0);
+          av_dump_format(m_pFormatContext, 0, CURL::GetRedacted(m_pInput->GetFileName()).c_str(), 0);
 
-          // update streams
-          CreateStreams(m_program);
+          unsigned int m_newStreams = m_pFormatContext->nb_streams;
+          if (m_oldStreams == 0)
+            m_oldStreams = m_newStreams;
 
-          pPacket = CDVDDemuxUtils::AllocateDemuxPacket(0);
-          pPacket->iStreamId = DMX_SPECIALID_STREAMCHANGE;
-          pPacket->demuxerId = m_demuxerId;
+          if (m_newStreams > m_oldStreams+1)
+          {
+            // reset streams
+            CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read() Changed stream: old streams {} - new streams {}", m_oldStreams, m_newStreams);
+            m_oldStreams = 0;
+            Flush();
+            Reset();
+            CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read() Reset stream");
+            m_pkt.pkt.size = 0;
+            m_pkt.pkt.data = NULL;
+            return nullptr;
+          }
+          else
+          {
+            m_oldStreams = m_newStreams;
 
-          return pPacket;
+            // update streams
+            CreateStreams(m_program);
+
+            pPacket = CDVDDemuxUtils::AllocateDemuxPacket(0);
+            pPacket->iStreamId = DMX_SPECIALID_STREAMCHANGE;
+            pPacket->demuxerId = m_demuxerId;
+
+            return pPacket;
+          }
         }
 
         AVStream* stream = m_pFormatContext->streams[m_pkt.pkt.stream_index];
