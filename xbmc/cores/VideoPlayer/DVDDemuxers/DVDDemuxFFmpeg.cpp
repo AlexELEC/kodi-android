@@ -672,7 +672,7 @@ bool CDVDDemuxFFmpeg::Open(const std::shared_ptr<CDVDInputStream>& pInput, bool 
   m_startTime = 0;
   m_seekStream = -1;
 
-  if (m_checkTransportStream && m_streaminfo)
+  /*if (m_checkTransportStream && m_streaminfo)
   {
     int64_t duration = m_pFormatContext->duration;
     std::shared_ptr<CDVDInputStream> pInputStream = m_pInput;
@@ -681,7 +681,7 @@ bool CDVDDemuxFFmpeg::Open(const std::shared_ptr<CDVDInputStream>& pInput, bool 
     if (!Open(pInputStream, false))
       return false;
     m_pFormatContext->duration = duration;
-  }
+  }*/
 
   return true;
 }
