@@ -154,6 +154,7 @@ protected:
   bool     m_bSup;
   int      m_speed;
   unsigned int m_oldStreams;
+  unsigned int m_oldProgCount;
   unsigned int m_program;
   unsigned int m_streamsInProgram;
   unsigned int m_newProgram;

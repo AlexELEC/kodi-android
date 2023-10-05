@@ -209,6 +209,7 @@ CDVDDemuxFFmpeg::CDVDDemuxFFmpeg() : CDVDDemux()
   m_speed = DVD_PLAYSPEED_NORMAL;
   m_program = UINT_MAX;
   m_oldStreams = 0;
+  m_oldProgCount = 0;
   m_pkt.result = -1;
   memset(&m_pkt.pkt, 0, sizeof(AVPacket));
   m_streaminfo = true; /* set to true if we want to look for streams before playback */
@@ -1105,15 +1106,21 @@ DemuxPacket* CDVDDemuxFFmpeg::Read()
           unsigned int m_newStreams = m_pFormatContext->nb_streams;
           if (m_oldStreams == 0)
             m_oldStreams = m_newStreams;
+          CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read(): Old streams - {} / New streams - {}", m_oldStreams, m_newStreams);
 
-          if (m_newStreams > m_oldStreams+1)
+          unsigned int m_newProgCount = m_pFormatContext->nb_programs;
+          if (m_oldProgCount == 0)
+            m_oldProgCount = m_newProgCount;
+          CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read(): Old programs - {} / New programs - {}", m_oldProgCount, m_newProgCount);
+
+          if (m_newStreams > m_oldStreams+1 || m_newProgCount > m_oldProgCount)
           {
             // reset streams
-            CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read() Changed stream: old streams {} - new streams {}", m_oldStreams, m_newStreams);
             m_oldStreams = 0;
+            m_oldProgCount = 0;
             Flush();
             Reset();
-            CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read() Reset stream");
+            CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read() Reset stream...");
             m_pkt.pkt.size = 0;
             m_pkt.pkt.data = NULL;
             return nullptr;
@@ -1121,6 +1128,7 @@ DemuxPacket* CDVDDemuxFFmpeg::Read()
           else
           {
             m_oldStreams = m_newStreams;
+            m_oldProgCount = m_newProgCount;
 
             // update streams
             CreateStreams(m_program);
