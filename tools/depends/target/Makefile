@@ -29,6 +29,7 @@ DEPENDS = \
   libjpeg-turbo \
   liblzo2 \
   libmicrohttpd \
+  libnfs \
   libplist \
   libpng \
   libshairplay \
