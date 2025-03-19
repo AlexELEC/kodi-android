@@ -120,6 +120,9 @@ extern "C"
     /// | <b>`active-remote`</b>              | Set the "active-remote" header
     /// | <b>`auth`</b>                       | Set the authentication method. Possible values: any, anysafe, digest, ntlm
     /// | <b>`connection-timeout`</b>         | Set the connection timeout in seconds
+    /// | <b>`data-timeout`</b>               | Set the maximum time the transfer is allowed to complete in seconds
+    /// | <b>`lowspeed-time`</b>              | It contains the time in number seconds that the transfer speed should be below the CURLOPT_LOW_SPEED_LIMIT (default 1 Byte/sec) for the library to consider it too slow and abort
+    /// | <b>`speed-limit`</b>                | Set low speed limit in bytes per second
     /// | <b>`cookie`</b>                     | Set the "cookie" header
     /// | <b>`customrequest`</b>              | Set a custom HTTP request like DELETE
     /// | <b>`noshout`</b>                    | Set to true if kodi detects a stream as shoutcast by mistake.
