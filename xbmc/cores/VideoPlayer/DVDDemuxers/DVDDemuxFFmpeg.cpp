@@ -208,6 +208,9 @@ CDVDDemuxFFmpeg::CDVDDemuxFFmpeg() : CDVDDemux()
   m_bSup = false;
   m_speed = DVD_PLAYSPEED_NORMAL;
   m_program = UINT_MAX;
+  m_oldStreams = 0;
+  m_oldProgCount = 0;
+  m_bResetStream = false;
   m_pkt.result = -1;
   memset(&m_pkt.pkt, 0, sizeof(AVPacket));
   m_streaminfo = true; /* set to true if we want to look for streams before playback */
@@ -595,6 +598,15 @@ bool CDVDDemuxFFmpeg::Open(const std::shared_ptr<CDVDInputStream>& pInput, bool 
   }
   else
   {
+    m_program = 0;
+    m_checkTransportStream = true;
+    skipCreateStreams = true;
+  }
+
+  if (m_bResetStream)
+  {
+    CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Open(): Reset Stream");
+    m_bResetStream = false;
     m_program = 0;
     m_checkTransportStream = true;
     skipCreateStreams = true;
@@ -1091,14 +1103,39 @@ DemuxPacket* CDVDDemuxFFmpeg::ReadInternal(bool keep)
           av_dump_format(m_pFormatContext, 0, CURL::GetRedacted(m_pInput->GetFileName()).c_str(),
                          0);
 
-          // update streams
-          CreateStreams(m_program);
+          unsigned int m_newStreams = m_pFormatContext->nb_streams;
+          if (m_oldStreams == 0)
+            m_oldStreams = m_newStreams;
+          CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read(): Old streams - {} / New streams - {}", m_oldStreams, m_newStreams);
 
-          pPacket = CDVDDemuxUtils::AllocateDemuxPacket(0);
-          pPacket->iStreamId = DMX_SPECIALID_STREAMCHANGE;
-          pPacket->demuxerId = m_demuxerId;
+          unsigned int m_newProgCount = m_pFormatContext->nb_programs;
+          if (m_oldProgCount == 0)
+            m_oldProgCount = m_newProgCount;
+          CLog::Log(LOGINFO, "CDVDDemuxFFmpeg::Read(): Old programs - {} / New programs - {}", m_oldProgCount, m_newProgCount);
 
-          return pPacket;
+          if (m_newStreams > m_oldStreams+1 || m_newProgCount > m_oldProgCount)
+          {
+            // reset streams
+            m_oldStreams = 0;
+            m_oldProgCount = 0;
+            m_bResetStream = true;
+            Reset();
+            return nullptr;
+          }
+          else
+          {
+            m_oldStreams = m_newStreams;
+            m_oldProgCount = m_newProgCount;
+
+            // update streams
+            CreateStreams(m_program);
+
+            pPacket = CDVDDemuxUtils::AllocateDemuxPacket(0);
+            pPacket->iStreamId = DMX_SPECIALID_STREAMCHANGE;
+            pPacket->demuxerId = m_demuxerId;
+
+            return pPacket;
+          }
         }
 
         AVStream* stream = m_pFormatContext->streams[m_pkt.pkt.stream_index];
